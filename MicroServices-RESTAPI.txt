@@ -59,7 +59,7 @@ Service API Design:
    =>TCP services
    =>Grpc Services
 ..................................................................................
-				RestFull WebService Implementation
+			RestFull WebService Implementation
 ..................................................................................
          	  Microservice-HTTP Based Microserivce
   	 	  RESTFull Web Service using Jax-rs Spec
@@ -358,8 +358,691 @@ public class UserResource {
     }
 }
 
+			 PATH Parameter
+
+ @Path("/{id}")
+ @PathParam("id") Integer id
+
+package com.ibm.rest;
+
+import javax.ws.rs.*;
+
+/**
+ * Resource class must be named as DomainNameResource
+ */
+
+@Path("/api/users")
+public class UserResource {
+
+    @GET
+    public String getUsers(){
+        return "Users";
+    }
+
+    @GET
+    @Path("/{id}")
+    public String getUserById(@PathParam("id") Integer id) {
+        return "User By Id" + id;
+    }
+    @POST
+    public String save(){
+        return "Users save";
+    }
+    @PUT
+    public String update(){
+        return "Users update";
+    }
+    @DELETE
+    public String remove(){
+        return "Users remove";
+    }
+}
+.....................................................................................
+			 PATH Parameter
+
+ @Path("/{id}")
+ @PathParam("id") Integer id
+
+package com.ibm.rest;
+
+import javax.ws.rs.*;
+
+/**
+ * Resource class must be named as DomainNameResource
+ */
+
+@Path("/api/users")
+public class UserResource {
+
+    @GET
+    public String getUsers(){
+        return "Users";
+    }
+
+    @GET
+    @Path("/{id}")
+    public String getUserById(@PathParam("id") Integer id) {
+        return "User By Id" + id;
+    }
+    @POST
+    public String save(){
+        return "Users save";
+    }
+    @PUT
+    public String update(){
+        return "Users update";
+    }
+    @DELETE
+    public String remove(){
+        return "Users remove";
+    }
+}
+.....................................................................................
+			Passing data to the REST API
+
+Data can be passed to the end point
+
+1.through url - path parameter,query parameters,matrix parameters
+   data passed
+2.Through body(payload)
+  
+Matrix Parameters: Passing more than one parameter.
 
 
+package com.ibm.rest;
+
+import javax.ws.rs.*;
+
+/**
+ * Resource class must be named as DomainNameResource
+ */
+
+@Path("/api/users")
+public class UserResource {
+     //Read Users with state and city
+    //http://localhost:8080/api/users/address;city=Coimbatore;state=Tamil nadu
+    @GET
+    @Path("/address")
+    public String getUserCityAndState(@MatrixParam("city") String city, @MatrixParam("state") String state) {
+        return city + state  ;
+    }
+   
+}
+...................................................................................	
+			Query Parameters
+..................................................................................
+package com.ibm.rest;
+
+import javax.ws.rs.*;
+
+@Path("/api/users")
+public class UserResource {
+
+    @GET
+    public String getUsers(){
+        return "Users";
+    }
+    //http://localhost:8080/api/users/mailphone?mailId=test@gmail.com&mobileNo=0000000
+    @GET
+    @Path("/mailphone")
+    public String getUsersMailAndPhone(@QueryParam("mailId") String mailId, @QueryParam("mobileNo") String mobileNo) {
+        return mailId + mobileNo;
+    }
+}
+.....................................................................................			  DefaultValues Query Parameters
+
+if you dont pass Query parameters ,the default values can be assigned.
+
+   //http://localhost:8080/api/users/mailphone - default values for Query Parameter
+    //http://localhost:8080/api/users/mailphone?mailId=test@gmail.com&mobileNo=0000000
+    @GET
+    @Path("/mailphone")
+    public String getUsersMailAndPhone(@QueryParam("mailId") @DefaultValue("contact@gmail.com") String mailId , @QueryParam("mobileNo") @DefaultValue("1234567890") String mobileNo) {
+        return mailId + mobileNo;
+    }
+.....................................................................................
+				Context Object
+....................................................................................
+
+Context Object provides information about "Running Container" and the application what we have deployed...
+
+How to access context Information?
+
+@Context 
+
+UriInfo
+HttpHeader information
+package com.ibm.rest;
+
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.UriInfo;
+
+@Path("/api/containerinfo")
+public class ContextResource {
+
+    @GET()
+    @Path("/urls")
+    public String getUriInfo(@Context UriInfo uriInfo) {
+        System.out.println(uriInfo.getAbsolutePath() + " " + uriInfo.getRequestUri());
+        return uriInfo.getAbsolutePath() + " " +uriInfo.getRequestUri();
+    }
+
+    @GET()
+    @Path("/headers")
+    public String getHeaders(@Context HttpHeaders headers) {
+        System.out.println(headers.getRequestHeaders());
+        return headers.getRequestHeaders().toString();
+    }
+}
+.....................................................................................
+				Responses
+.....................................................................................
+
+What can be response?
+
+JAX-RS api can return any of one the type
+ - String  - plain/text
+ - Objects/collections - application/json , XML
+ - Void    - no return type -  only status
+ - Response - Response Object 
+ - Reactive Type -Uni or Multi
+
+
+
+How to return Object?
+  Object has to be converted into Json...
+
+
+
+package com.ibm.rest;
+
+import com.ibm.rest.enity.Customer;
+
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.MediaType;
+
+@Path("/api/customers")
+public class CustomerResource {
+
+    //return single Customer
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    public Customer getCustomer() {
+        Customer customer = new Customer(1, "Subramanian", "Murugan", "Coimbatore");
+        return customer;
+    }
+}
+
+After running this code?
+ you will get plain string of the object , tostring value of that object
+
+incase of old Quarkus framework...
+After Sending request, you will get error
+
+Could not find MessageBodyWriter for response object of type: com.ibm.rs.response.type.Book of media type:
+application/json
+
+org.jboss.resteasy.core.NoMessageBodyWriterFoundFailure: Could not find MessageBodyWriter for
+ response object of type: com.ibm.rs.response.type.Book of media type: application/json
+
+The Quarkus runtime not able to convert Book object into json 
+
+JSON is nothing but text representation of "Object".
+
+You need to convert Java object to "String"
+
+in order to convert we need special lib.
+
+REST Representations:
+   How response to be represented by Resource to the User
+
+In tradtional webservice, the result would be always XML - SOAP Based webservice.
+In RESTfull webservice the result would be any thing , if user and server agrees upon
+ - JSON Format - most popular data format
+
+What can be Response?
+ String- plain/text
+ Json
+ XML
+.....................................................................................
+        			 Extensions
+.....................................................................................				
+What is extension?
+
+  extension is, project dependency - jar dependency.
+
+By default , you can have extensions when create new project.
+
+Think of Quarkus extensions as your project dependencies.
+
+Extensions configure, boot and integrate a framework or technology into your Quarkus application. 
+
+They also do all of the heavy lifting of providing the right information to GraalVM for your application to compile natively.
+
+How to manage extensions(dependency)?
+
+managment means - add,removing,listing extensions
+
+there are two ways
+
+1.via maven or gradle 
+2.via cli - quarkus
+
+
+List Extensions in the current project
+quarkus  ext ls
+Current Quarkus extensions installed: 
+
+? ArtifactId                                         Extension Name
+? quarkus-resteasy-reactive                          RESTEasy Reactive
+
+
+Adding new Extension:
+quarkus ext add resteasy-reactive-jackson
+[SUCCESS] Extension io.quarkus:quarkus-resteasy-reactive-jackson has been installed
+
+quarkus  ext ls                           
+Current Quarkus extensions installed: 
+
+? ArtifactId                                         Extension Name
+? quarkus-resteasy-reactive                          RESTEasy Reactive
+? quarkus-resteasy-reactive-jackson                  RESTEasy Reactive Jackson
+
+
+Collections: Save and Return:
+.............................
+
+package com.ibm.rest;
+
+import com.ibm.rest.enity.Customer;
+
+import javax.ws.rs.*;
+import javax.ws.rs.core.MediaType;
+import java.util.List;
+
+@Path("/api/customers")
+public class CustomerResource {
+
+    //return single Customer
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    public Customer getCustomer() {
+        Customer customer = new Customer(1, "Subramanian", "Murugan", "Coimbatore");
+        return customer;
+    }
+
+    @GET
+    @Path("/list")
+    @Produces(MediaType.APPLICATION_JSON)
+    public List<Customer> getCustomerList() {
+        Customer customer = new Customer(1, "Subramanian", "Murugan", "Coimbatore");
+        return List.of(customer, customer, customer);
+    }
+
+    @POST
+    @Path("/save")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Customer save(Customer customer) {
+        System.out.println(customer.getFirstName() + customer.getLastName());
+        return customer;
+    }
+}
+			.................................................................................
+		Limitions of Object(User,Customer,List) as Response
+	
+-if you want to customize the Response we cant,for eg if you want to add some custom headers like tokens,urls,resource information.
+
+
+Reponse Object
+
+Response;
+
+ Object used to send "payload-data" along with meta data (http code,otherinformation)
+
+HTTP Status codes:
+
+-> informational response - 100 to 199-1X
+-> success response -  200-299-2X
+-> Redirects  - 300-399 -3X
+-> client errors - 400-499 -4X
+-> server errrors - 500-599 - 5X
+
+
+Response:
+
+Response class is abstract class contains two category of api
+
+public abstract Object getEntity();
+public abstract int getStatus();
+
+Builder Class:
+
+public static ResponseBuilder status(int status)
+public static ResponseBuilder ok()
+public static ResponseBuilder ok(Object entity)
+public static ResponseBuilder created()
+public static ResponseBuilder accepted()
+public static ResponseBuilder noContent()
+
+Response class has been desinged with "Builder" /Command Chain Pattern
+https://docs.jboss.org/resteasy/docs/3.0.9.Final/javadocs/index.html
+
+package com.ibm.rest;
+
+import com.ibm.rest.enity.Product;
+import org.jboss.resteasy.reactive.ResponseHeader;
+import org.jboss.resteasy.reactive.RestResponse;
+import org.jboss.resteasy.reactive.RestResponse.ResponseBuilder;
+
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.MediaType;
+import java.util.List;
+
+@Path("/api/products")
+public class ProductResource {
+
+    //    @GET
+//    public List<Product> listProducts(){
+//        Product product = new Product(1,"phone","100",34.90);
+//        return List.of(product);
+//    }
+//    @GET
+//    @Produces(MediaType.APPLICATION_JSON)
+//    public Response listProducts(){
+//        return Response
+//                .ok()
+//                .header("myheader","MyValue")
+//                .entity(List.of(new  Product(1,"phone","100",34.90)))
+//                .build();
+//    }
+    //Reactive Implementation of Response
+//    @GET
+//    @Produces(MediaType.APPLICATION_JSON)
+//    public RestResponse<Object> listProducts() {
+//        Product product = new Product(1,"phone","100",34.90);
+//        return ResponseBuilder.ok().header("myheader","Myvalue").entity(List.of(product)).build();
+//    }
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @ResponseHeader(name="myHeader",value = "Myvalue ")
+    public RestResponse<List<Product>> listProducts() {
+        Product product = new Product(1, "phone", "100", 34.90);
+        return ResponseBuilder.ok(List.of(product)).build();
+    }
+    @GET
+    @Path("/show")
+    //No Content is returned -204- HTTP
+    public void showProduct() {
+        System.out.println("show Product");
+    }
+}
+....................................................................................
+
+................................................................................................				Status Codes And RestFul Api Design
+..............................................................................................
+Status Code : 100 to 500
+
+1XX Information Responses
+
+100 Continue
+101 Switching Protocols
+102 Processing
+103 Early Hints
+
+2XX Success
+
+200 OK
+201 Created
+202 Accepted
+203 Non-Authoritative Information
+204 No Content
+205 Reset Content
+206 Partial Content
+207 Multi-Status
+208 Already Reported
+226 IM Used
+
+3XX Redirection
+300 Multiple Choices
+301 Moved Permanently
+302 Found
+303 See Other
+304 Not Modified
+305 Use Proxy
+306 Switch Proxy
+307 Temporary Redirect
+308 Permanent Redirect
+
+4XX Client errors
+
+400 Bad Request
+401 Unauthorized
+402 Payment Required
+403 Forbidden
+404 Not Found
+405 Method Not Allowed
+406 Not Acceptable
+407 Proxy Authentication Required
+408 Request Timeout
+409 Conflict
+410 Gone
+411 Length Required
+412 Precondition Failed
+413 Payload Too Large
+414 URI Too Long
+415 Unsupported Media Type
+416 Range Not Satisfiable
+417 Expectation Failed
+418 I'm a teapot
+420 Method Failure
+421 Misdirected Request
+422 Unprocessable Entity
+423 Locked
+424 Failed Dependency
+426 Upgrade Required
+428 Precondition Required
+429 Too Many Requests
+431 Request Header Fields Too Large
+451 Unavailable For Legal Reasons
+
+5XX Server errors
+500 Internal Server error
+501 Not Implemented
+502 Bad Gateway
+503 Service Unavailable
+504 gateway Timeout
+505 Http version not supported
+506 Varient Also negotiate
+507 Insufficient Storage
+508 Loop Detected
+510 Not Extended
+511 Network Authentication Required
+....................................................................................
+				Async /Reactive Type
+
+if your endpoint method needs to accomplish an async or reactive task before being able to answer to the client, you can declare your method to return "Uni/Multi",
+in which case current http request to be turned as non blocking handled by "event loop thread", the current method will not return result immediately rather which suspends current http thread.
+
+
+package com.ibm.rest.reactive;
+import com.ibm.rest.enity.Book;
+import io.smallrye.mutiny.Uni;
+
+import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.MediaType;
+import java.util.List;
+
+@Path("/api/books")
+@Produces(MediaType.APPLICATION_JSON)
+@Consumes(MediaType.APPLICATION_JSON)
+public class BookReactiveResource {
+
+    @GET
+    @Path("/nonreactive")
+    public List<Book> listBooks(){
+        System.out.println("Current Thread - listBooks " + Thread.currentThread().getName());
+        return  List.of(new Book("1222","Quarkus in Action","Subramanian"));
+    }
+
+    @GET
+    @Path("/reactive")
+    public Uni<List<Book>> getBooks(){
+        System.out.println("Current Thread - getBooks " + Thread.currentThread().getName());
+        List books = List.of(new Book("1222","Quarkus in Action","Subramanian"));
+        return Uni.createFrom().item(books);
+    }
+}
+
+After running:
+http://localhost:8080/api/books/reactive
+
+Current Thread - getBooks vert.x-eventloop-thread-1
+
+http://localhost:8080/api/books/nonreactive
+Current Thread - listBooks executor-thread-0
+
+....................................................................................
+			Blocking and Non Blocking Threading Models
+
+Quarkus(Vertx) provides two types of threads
+
+1.Event loop thread
+   Thread which is used to build non blocking apps
+   Vertx(Quarkus) provides limited no threads to handle large concurrency
+   Quarkus enables event loop thread is activated to handle incoming request by 
+   Mutiny type called "Uni or Multi"
+
+2.Worker loop thread
+    It is Request Per thread model threads, when ever new request comes, quarkus allocats new a spearate thread for that request , that thread cant be reused by other request.
+	
+.................................................................................
+		The Golden Rule - Don’t Block the Event Loop
+
+
+Caution:
+  You should not write any which blocks event loop thread.
+
+if you block event loop thread, vertx engine throws warning and error(Thread Blocked Exception).
+
+What are the code which blocks event loop thread.
+
+1.Thread.sleep()
+2.Waiting on a lock
+3.Waiting on a mutex or monitor (e.g. synchronized section)
+4.Doing a long lived database operation and waiting for a result
+5.Doing a complex calculation that takes some significant time.
+6.Spinning in a loop
+
+Default timeout for Event loop thread is 2000ms,By default event loop thread can be blocked for 2secs only beyond that , vertx will start giving warning, and error..
+
+eg
+    @GET
+    @Path("/dontblockeventloop")
+    public Uni<List<Book>> blockBooks() throws InterruptedException {
+        System.out.println("Current Thread - getBooks " + Thread.currentThread().getName());
+
+        //Thread.sleep(2000);
+        Thread.sleep(5000);
+
+        List books = List.of(new Book("1222","Quarkus in Action","Subramanian"));
+        return Uni.createFrom().item(books);
+    }
+
+after running you will get error like below:
+2023-01-30 14:57:09,464 WARN  [io.ver.cor.imp.BlockedThreadChecker] (vertx-blocked-thread-checker) Thread Th
+read[vert.x-eventloop-thread-1,5,main] has been blocked for 2373 ms, time limit is 2000 ms: io.vertx.core.Ve
+rtxException: Thread blocked
+        at java.base@11.0.11/java.lang.Thread.sleep(Native Method)
+        at com.ibm.rest.reactive.BookReactiveResource.blockBooks(BookReactiveResource.java:38)
+        at com.ibm.rest.reactive.BookReactiveResource$quarkusrestinvoker$blockBooks_3608efa748df20ad4f3b1307
+84513f30b11b4f96.invoke(Unknown Source)
+ 
+What if i want to write blocking operations inside the nonblocking code which returns Reactive?
+
+@Blocking Annotation:
+
+     @GET
+    @Path("/dontblockeventloop")
+    @Blocking //safely delegate the work to worker thread...
+    public Uni<List<Book>> blockBooks() throws InterruptedException {
+        System.out.println("Current Thread - getBooks " + Thread.currentThread().getName());
+        //Thread.sleep(2000);
+        Thread.sleep(5000);
+        List books = List.of(new Book("1222","Quarkus in Action","Subramanian"));
+        return Uni.createFrom().item(books);
+    }
+
+What if i want to schdule some tasks in delayed manner?
+
+=>Thread.sleep :Which is not reactive scheduler.
+=>onItem.delayIt() : Which is reactive scheduler
+
+package com.ibm.rest.reactive;
+
+import com.ibm.rest.enity.Book;
+import io.smallrye.common.annotation.Blocking;
+import io.smallrye.mutiny.Uni;
+
+import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.MediaType;
+import java.time.Duration;
+import java.util.List;
+
+@Path("/api/books")
+@Produces(MediaType.APPLICATION_JSON)
+@Consumes(MediaType.APPLICATION_JSON)
+public class BookReactiveResource {
+
+    @GET
+    @Path("/nonreactive")
+    public List<Book> listBooks() {
+        System.out.println("Current Thread - listBooks " + Thread.currentThread().getName());
+        return List.of(new Book("1222", "Quarkus in Action", "Subramanian"));
+    }
+
+    @GET
+    @Path("/reactive")
+    public Uni<List<Book>> getBooks() {
+        System.out.println("Current Thread - getBooks " + Thread.currentThread().getName());
+        List books = List.of(new Book("1222", "Quarkus in Action", "Subramanian"));
+        return Uni.createFrom().item(books);
+    }
+
+    @GET
+    @Path("/dontblockeventloop")
+    @Blocking //safely delegate the work to worker thread...
+    public Uni<List<Book>> blockBooks() throws InterruptedException {
+        System.out.println("Current Thread - getBooks " + Thread.currentThread().getName());
+        //Thread.sleep(2000);
+        Thread.sleep(5000);
+        List books = List.of(new Book("1222", "Quarkus in Action", "Subramanian"));
+        return Uni.createFrom().item(books);
+    }
+
+    @GET
+    @Path("/nonblockingdelay")
+    public Uni delayBooks() throws InterruptedException {
+        System.out.println("Current Thread - getBooks " + Thread.currentThread().getName());
+        List books = List.of(new Book("1222", "Quarkus in Action", "Subramanian"));
+        return Uni.createFrom().item(books).onItem().delayIt().by(Duration.ofSeconds(2));
+    }
+}
 
 
 
