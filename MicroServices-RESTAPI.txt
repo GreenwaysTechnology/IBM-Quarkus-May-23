@@ -1043,6 +1043,97 @@ public class BookReactiveResource {
         return Uni.createFrom().item(books).onItem().delayIt().by(Duration.ofSeconds(2));
     }
 }
+...................................................................................
+
+..................................................................................
+			  Exception Handling
+..................................................................................			 What can be Response
+
+
+Response Types:
+
+1.SUCCESS Response
+2.ERROR Response
+
+How to handle / Convert ERRORS/Exceptions into HTTP Response Object?
+
+ public Response getResponse(){
+
+     return Response.ok().build();
+ }
+
+According to Application, Exception can be
+
+1.System Exception :
+  Exception thrown by jvm - NumberFormat,NullPointerException,ClassCastException.
+
+2.Application Exception
+   
+  UserNotFoundException
+  PasswordMissMatchException
+  ...
+public boolean validate(){
+
+  if(passwordmatch){
+
+
+  }
+  else{ 
+       throw new PasswordMismatchException("password does not match");
+  } 
+}
+JAX-RS also provides the javax.ws.rs.WebApplicationException. 
+This can be thrown by application code and automatically processed by JAX-RS without
+having to write an explicit mapper.
+
+package com.ibm.rest.exceptions;
+
+
+import javax.ws.rs.ext.Provider;
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.ext.ExceptionMapper;
+
+@Provider
+public class WebApplicationMapper  implements ExceptionMapper<WebApplicationException> {
+
+    @Override
+    public Response toResponse(WebApplicationException exception) {
+        return Response.ok().entity("Hero Not Found").build();
+    }
+}
+
+package com.ibm.rest.exceptions;
+
+import javax.ws.rs.*;
+import javax.ws.rs.core.Response;
+
+@Path("/api/movies")
+public class MovieResource {
+
+    @GET
+    @Path("/hero/{name}")
+    public Response getHero(@PathParam("name") String name) {
+        if (name.equals("myhero")) {
+            return Response.ok().entity("Hero " + name).build();
+        }
+        throw new WebApplicationException();
+    }
+}
+....................................................................................
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
