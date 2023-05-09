@@ -1,0 +1,97 @@
+			APPLICATION DATA CACHING
+....................................................................................
+Project creation:
+quarkus create app  code-with-quarkus-cache  --extension=cache,resteasy-reactive-jackson  
+
+Enable Cache:
+
+@CacheResult
+Loads a method result from the cache without executing the method body whenever possible.
+
+When a method annotated with @CacheResult is invoked, Quarkus will compute a cache key and use it to check in the cache whether the method has been already invoked
+
+@CacheInvalidate
+Removes an entry from the cache.
+When a method annotated with @CacheInvalidate is invoked, Quarkus will compute a cache key and use it to try to remove an existing entry from the cache
+
+@CacheInvalidateAll
+When a method annotated with @CacheInvalidateAll is invoked, Quarkus will remove all entries from the cache.
+
+@CacheKey
+When a method argument is annotated with @CacheKey, it is identified as a part of the cache key during an invocation of a method annotated with @CacheResult or @CacheInvalidate.
+
+This annotation is optional and should only be used when some method arguments are NOT part of the cache key.
+
+package com.ibm.rest;
+
+import io.quarkus.cache.CacheResult;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+
+import java.util.Date;
+
+@Path("hello")
+public class HelloResource {
+
+    @GET
+    @CacheResult(cacheName = "myname")
+    public String hello(){
+        System.out.println("called " + new Date());
+        return "Hello";
+    }
+    @GET
+    @Path("hai")
+    public String hai(){
+        System.out.println("called " + new Date());
+        return "hai";
+    }
+}
+
+REDIS CACHE
+By default, Quarkus Cache uses Caffeine as backend. It’s possible to use Redis instead.
+
+Redis as cache backend
+Redis as cache backend
+When using Redis as the backend for Quarkus cache, each cached item will be stored in Redis:
+
+The backend uses the <default> Redis client (if not configured otherwise), so make sure it’s configured (or use the redis dev service)
+
+the Redis key is built as follows: cache:$cache-name:$cache-key, where cache-key is the key the application uses.
+
+the value is encoded to JSON if needed
+
+application.properties
+quarkus.redis.devservices.enabled=true
+quarkus.redis.devservices.image-name=redis/redis-stack-server:latest
+
+package org.acme;
+
+import io.quarkus.cache.CacheInvalidateAll;
+import io.quarkus.cache.CacheResult;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
+
+import java.util.Date;
+
+@Path("/hello")
+public class GreetingResource {
+
+    @GET
+    @Produces(MediaType.TEXT_PLAIN)
+    @CacheResult(cacheName = "message")
+    public String hello() {
+        System.out.println("Method called " + new Date());
+        return "Hello from RESTEasy Reactive";
+    }
+    //remove cache through code
+
+    @POST
+    @CacheInvalidateAll(cacheName = "message")
+    public void invalidateAll(){
+
+    }
+}
+

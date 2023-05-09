@@ -1,0 +1,5 @@
+# YAML file configuration
+greeting:
+  name: Subramanian
+  message: Hello
+  city: Coimbatore

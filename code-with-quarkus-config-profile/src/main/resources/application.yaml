@@ -1,0 +1,8 @@
+#Profile Based config
+#"%dev":
+#  greeting:
+#    message: Hello I am from dev
+#
+#"%prod":
+#  greeting:
+#    message: Hello I am from Prod
