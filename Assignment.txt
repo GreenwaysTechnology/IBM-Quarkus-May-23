@@ -1,0 +1,24 @@
+
+
+Assigment :
+
+Profile Managment app
+.....................
+
+User Service
+
+Profile Service
+
+Profile Service is caller 
+User Service is Callee
+
+Requirement
+
+User Service must expose Rest api having CURD operations
+ -YOu need to connect with Database - PostgreSql - DAO,RecordPattern
+
+Profile Service must expose apis which intern call User services
+ -YOu have to use RestClient interface and also Vertx WebClient
+ ->YOu have to use caching
+ -You have to use Service Discovery called Strok
+ ->You have to have Resilience patterns - Timeout or CircuitBreaker,or BulkHead

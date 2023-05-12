@@ -1,0 +1,139 @@
+				Resilience -Reliability
+.....................................................................................
+
+Resilience is  Nothing but how to handle failures in distributed(MicroService) system gracefully.
+..................................................................................
+			Reliability -MicroService Pattern
+.................................................................................
+What is fault?
+
+Any System Subject to fail.
+
+Layers of system and its failures
+
+-Hardware failures
+-OS Failures
+-Network failures
+-Application failures
+
+Software failures:
+..................
+->JVM failures
+  -out of memory
+  -heap dump errors
+  -process related errors
+  -thread related errors
+-How to fix failures
+  -there tools available to detect memories,threads,heap dump 
+   -jmeter,heapdump errors, apache benchmark....
+
+Application failures:
+
+->Exception handling
+ file handling,database handling, call third party apis,networking, biz use case failures.
+
+-How to fix application errors
+  -Exception handlers--- give report , we can decide what do.
+
+try{
+ //what type of code i can write
+ //The code subject to fail, risky code. : The code may cause error any time.
+
+}
+catch(Exception e){
+  //for recovery code.
+  //you can report to other code or ui
+  //you can log those errors, you can audit latter.
+}
+..............................................................................................
+				Micro Services and Error Handling
+..............................................................................................
+
+You have to have idea that the system will fail at any point of time, if failure comes how to handle that.
+
+System failures and how to handle via patterns: Resilience Patterns:
+
+Quarkus and Falut Tolerance: 
+  Quarkus provides MicroProfile Fault Tolerance apis. 
+
+Fault Tolerance provides developers with the following strategies for dealing with failure:
+
+
+1.Timeout: Define a maximum duration for execution
+
+2.Retry: Attempt execution again if it fails
+
+3.Bulkhead: Limit concurrent execution so that failures in that area can’t overload the whole system
+
+4.CircuitBreaker: Automatically fail fast when execution repeatedly fails
+
+Solution /Handle any type failures:
+...................................
+Fallback: Provide an alternative solution when execution fails
+....................................................................................
+
+
+How to apply fault Tolerance?
+
+   Fault Tolerance provides an annotation for each strategy which can be placed on the methods of CDI beans. When an annotated method is called, the call is intercepted and the corresponding fault tolerance strategies are applied to the execution of that method.
+.....................................................................................
+			Quarkus Falut Tolerance implmentations
+
+
+ <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-smallrye-fault-tolerance</artifactId>
+  </dependency>
+
+Pattern -1: Bulk Head
+
+
+BulkHead:
+   The idea behind bulkhead is to set a limit on the number of concurrent calls we make to a remote service.
+
+ The Bulkhead pattern is to prevent faults in one part of the system from cascading to the entire system, which might bring down the whole system. The implementation is to limit the number of concurrent requests accessing to an instance.
+
+@Bulkhead(5) // maximum 5 concurrent requests allowed
+public Connection serviceA() {
+       Connection conn = null;
+       conn = connectionService();
+       return conn;
+}
+Steps:
+import org.eclipse.microprofile.faulttolerance.Bulkhead;
+import org.eclipse.microprofile.faulttolerance.Fallback;
+
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.core.Response;
+
+@Path("/bulk")
+public class BulkHeadResource {
+
+    @GET
+    @Bulkhead(value = 5)
+    @Fallback(fallbackMethod = "handleBulkHead")
+    public Response dontOverload() {
+        System.out.println("Api is called");
+        return Response.ok("bulk").build();
+    }
+
+    public Response handleBulkHead() {
+        System.out.println("fallback response");
+        return Response.ok("sorry System busy").build();
+    }
+}
+
+How to test bulk head?
+
+you have to install any load testing tool
+-apache benchmark
+-Soap UI benchmark
+-node based tools
+ -loadtest
+
+How to install load test?
+
+npm install loadtest -g
+
+>loadtest -n 100 -c 10 http://localhost:8080/bulk
