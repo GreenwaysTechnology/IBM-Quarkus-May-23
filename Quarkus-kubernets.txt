@@ -1,0 +1,520 @@
+                            Quarkus App Deployment on Kubernets
+.....................................................................................
+
+Application in production:
+
+1.bare metal Production env
+2.vm based env- we can run vs on top of physical os
+3.containers - light weight vms
+   -docker - container solution
+
+OS features;
+ io  
+ network
+ cpu/process
+ memory
+container - will have core os features
+
+    Your app
+       |
+  os-mini os - container
+      |
+  Runtime -- Engine- Docker Engine
+      |
+..............................
+       |
+   ----------VM -------
+        -----windows vm /win subsystem -wsl
+       os -windows
+
+Why containers based deployment?
+
+->to avoid software dependency mismatch in  prod and dev 
+
+before moving your app to prod, we can simulate those things in dev.
+
+...................................................................................
+
+Other advantages
+
+1.scalling and high availbility
+....................................................................................
+				Management of containers
+...................................................................................
+
+Kubernets :  Container management platform.
+.....................................................................................
+
+Tools:
+ docker desktop
+   -kubernets
+ kubectl
+ minikube
+
+$minikube status
+
+minikube
+type: Control Plane
+host: Running
+kubelet: Running
+apiserver: Running
+kubeconfig: Configured
+
+$minikube start
+...............................................................................
+			  Quarkus framework is kubernets native/cloud native
+
+In Quarkus, all deployment descriptor related to kubernets is auto generated.
+You may edit those configurations if required.
+
+How to deploy simple quarkus app into kubernets?
+
+Quarkus uses a tool called dekorate , used to generate basic kubernates deployment descriptor - kubernets.json kubernets.yml
+
+Using this deployment descriptor file we deploy app on kubernets cluster.
+
+kubectl apply -f fileLocation /kubernetes.json/yml --->
+
+
+Dependencies:
+quarkus create app org.acme:kubernetes-quickstart
+
+    --extension=resteasy-reactive,kubernetes,jib
+
+Basic extension:
+ -quarkus-kubernets
+ -jlib
+
+Jlib is build tool  to create docker images for your quarkus apps
+
+Steps:
+  1.compile the quarkus
+  2.pack the quarkus - jar file
+  3.describe image file - dockerImage
+  4.start build process 
+      docker creates image using jlib too
+      docker starts building container from the image
+  5.deployment starts on the top kubernets cluster
+
+
+After creating project , you have to configure the applcation.properties
+
+quarkus.jib.base-jvm-image=fabric8/java-alpine-openjdk11-jre
+quarkus.container-image.build=true
+quarkus.container-image.push=true
+quarkus.container-image.registry=docker.io
+quarkus.container-image.username=subugee
+quarkus.container-image.password=subugee222#$
+quarkus.container-image.group=subugee
+quarkus.container-image.name=mykub-demo
+
+Make sure that docker configuration is right in order to push image into docker registery.
+
+C:\Users\sasub\.docker
+
+config.json
+
+{
+	"auths": {
+		"https://index.docker.io/v1/": {}
+	},
+	"credsStore": "subugee"
+}
+
+Start Build Process
+
+$ quarkus build
+or
+$ mvn clean package
+
+
+After build
+
+WARNING] [io.quarkus.container.image.jib.deployment.JibProcessor] Base image 'fabric8/java-alpine-openjdk11-jre' does not use a specific image digest - build may not be reproducible
+[INFO] [io.quarkus.container.image.jib.deployment.JibProcessor] The base image requires auth. Trying again for fabric8/java-alpine-openjdk11-jre...
+[INFO] [io.quarkus.container.image.jib.deployment.JibProcessor] LogEvent [level=INFO, message=trying docker-credential-subugee for registry-1.docker.io]
+[INFO] [io.quarkus.container.image.jib.deployment.JibProcessor] LogEvent [level=WARN, message=The system does not have docker-credential-subugee CLI]
+[INFO] [io.quarkus.container.image.jib.deployment.JibProcessor] LogEvent [level=WARN, message=  Caused by: Cannot run program "docker-credential-subugee": CreateProcess error=2, The system cannot find the file specified]
+[INFO] [io.quarkus.container.image.jib.deployment.JibProcessor] LogEvent [level=INFO, message=trying docker-credential-subugee for registry.hub.docker.com]
+[INFO] [io.quarkus.container.image.jib.deployment.JibProcessor] LogEvent [level=WARN, message=The system does not have docker-credential-subugee CLI]
+[INFO] [io.quarkus.container.image.jib.deployment.JibProcessor] LogEvent [level=WARN, message=  Caused by: Cannot run program "docker-credential-subugee": CreateProcess error=2, The system cannot find the file specified]
+[INFO] [io.quarkus.container.image.jib.deployment.JibProcessor] LogEvent [level=INFO, message=trying docker-credential-subugee for index.docker.io]
+[INFO] [io.quarkus.container.image.jib.deployment.JibProcessor] LogEvent [level=WARN, message=The system does not have docker-credential-subugee CLI]
+[INFO] [io.quarkus.container.image.jib.deployment.JibProcessor] LogEvent [level=WARN, message=  Caused by: Cannot run program "docker-credential-subugee": CreateProcess error=2, The system cannot find the file specified]
+[INFO] [io.quarkus.container.image.jib.deployment.JibProcessor] LogEvent [level=INFO, message=trying docker-credential-subugee for docker.io]
+[INFO] [io.quarkus.container.image.jib.deployment.JibProcessor] LogEvent [level=WARN, message=The system does not have docker-credential-subugee CLI]
+[INFO] [io.quarkus.container.image.jib.deployment.JibProcessor] LogEvent [level=WARN, message=  Caused by: Cannot run program "docker-credential-subugee": CreateProcess error=2, The system cannot find the file specified]
+[INFO] [io.quarkus.container.image.jib.deployment.JibProcessor] Using base image with digest: sha256:b459cc59d6c7ddc9fd52f981fc4c187f44a401f2433a1b4110810d2dd9e98a07
+[INFO] [io.quarkus.container.image.jib.deployment.JibProcessor] Container entrypoint set to [java, -Djava.util.logging.manager=org.jboss.logmanager.LogManager, -jar, quarkus-run.jar]
+[INFO] [io.quarkus.container.image.jib.deployment.JibProcessor] Pushed container image subugee/mykub-demo:1.0.0-SNAPSHOT (sha256:7ea14976fff6e2391600d7721dfe715b0dc7c574592d536719121ca00ab3d90e)
+
+[INFO] [io.quarkus.deployment.QuarkusAugmentor] Quarkus augmentation completed in 59579ms
+[INFO]
+[INFO] --- maven-failsafe-plugin:3.0.0-M7:integration-test (default) @ kubernetes-quickstart ---
+[INFO] Tests are skipped.
+[INFO]
+[INFO] --- maven-failsafe-plugin:3.0.0-M7:verify (default) @ kubernetes-quickstart ---
+[INFO] Tests are skipped.
+[INFO]
+[INFO] --- maven-install-plugin:2.4:install (default-install) @ kubernetes-quickstart ---
+[INFO] Installing E:\session\IBM\2022\sep\quarkus\kubernetes-quickstart\target\kubernetes-quickstart-1.0.0-SNAPSHOT.jar to C:\Users\sasub\.m2\repository\org\acme\kubernetes-quickstart\1.0.0-SNAPSHOT\kubernetes-quickstart-1.0.0-SNAPSHOT.jar
+[INFO] Installing E:\session\IBM\2022\sep\quarkus\kubernetes-quickstart\pom.xml to C:\Users\sasub\.m2\repository\org\acme\kubernetes-quickstart\1.0.0-SNAPSHOT\kubernetes-quickstart-1.0.0-SNAPSHOT.pom
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  01:16 min
+[INFO] Finished at: 2022-09-16T10:54:02+05:30
+[INFO] ------------------------------------------------------------------------
+
+
+After that you can view image , has been pushed into docker registry.
+
+subugee/mykub-demo:1.0.0-SNAPSHOT
+
+Verify the folder
+
+target/kubernets/kubernets.yml or .json
+ open any one file which is convenient for you.
+
+kubernets.yml.
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    app.quarkus.io/commit-id: 423f63c6c9613f9e55b42b4c2b8aedfc3d21cc02
+    app.quarkus.io/build-timestamp: 2022-09-16 - 05:23:04 +0000
+  labels:
+    app.kubernetes.io/name: mykub-demo
+    app.kubernetes.io/version: 1.0.0-SNAPSHOT
+  name: mykub-demo
+spec:
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8080
+  selector:
+    app.kubernetes.io/name: mykub-demo
+    app.kubernetes.io/version: 1.0.0-SNAPSHOT
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    app.quarkus.io/commit-id: 423f63c6c9613f9e55b42b4c2b8aedfc3d21cc02
+    app.quarkus.io/build-timestamp: 2022-09-16 - 05:23:04 +0000
+  labels:
+    app.kubernetes.io/version: 1.0.0-SNAPSHOT
+    app.kubernetes.io/name: mykub-demo
+  name: mykub-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/version: 1.0.0-SNAPSHOT
+      app.kubernetes.io/name: mykub-demo
+  template:
+    metadata:
+      annotations:
+        app.quarkus.io/commit-id: 423f63c6c9613f9e55b42b4c2b8aedfc3d21cc02
+        app.quarkus.io/build-timestamp: 2022-09-16 - 05:23:04 +0000
+      labels:
+        app.kubernetes.io/version: 1.0.0-SNAPSHOT
+        app.kubernetes.io/name: mykub-demo
+    spec:
+      containers:
+        - env:
+            - name: KUBERNETES_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          image: docker.io/subugee/mykub-demo:1.0.0-SNAPSHOT
+          imagePullPolicy: Always
+          name: mykub-demo
+          ports:
+            - containerPort: 8080
+              name: http
+              protocol: TCP
+
+
+Under Services you have to edit
+
+old value
+type: ClusterIP
+
+ services deployed cant be accessed outside containers
+
+if want to communicate the deployed application through browser
+new Value
+
+type: LoadBalancer
+
+....................................................................................
+				 Deployment process
+....................................................................................
+
+Steps:
+1
+>minikube status
+minikube
+type: Control Plane
+host: Running
+kubelet: Running
+apiserver: Running
+kubeconfig: Configured
+
+2. Check pod is running
+
+2.1.kubectl get pods
+ if not running
+
+3. start deployment - start container/create container/create pod
+
+E:\session\IBM\2022\sep\quarkus\kubernetes-quickstart>kubectl apply -f target/kubernetes/kubernetes.yml
+service/mykub-demo configured
+deployment.apps/mykub-demo configured
+
+4.To verify the deployment
+4.1. kubectl get all
+NAME                             READY   STATUS    RESTARTS   AGE
+pod/mykub-demo-d87b4fc46-ff7tj   1/1     Running   0          60s
+
+NAME                 TYPE           CLUSTER-IP       EXTERNAL-IP   PORT(S)        AGE
+service/kubernetes   ClusterIP      10.96.0.1        <none>        443/TCP        12h
+service/mykub-demo   LoadBalancer   10.101.230.205   <pending>     80:32760/TCP   4h16m
+
+NAME                         READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/mykub-demo   1/1     1            1           4h16m
+
+NAME                                    DESIRED   CURRENT   READY   AGE
+replicaset.apps/mykub-demo-596d4f78c8   0         0         0       4h16m
+replicaset.apps/mykub-demo-d87b4fc46    1         1         1       60s
+
+
+4.2.E:\session\IBM\2022\sep\quarkus\kubernetes-quickstart>kubectl get pods
+NAME                         READY   STATUS    RESTARTS   AGE
+mykub-demo-d87b4fc46-ff7tj   1/1     Running   0          111s
+
+4.3.verify the container logs
+ 
+E:\session\IBM\2022\sep\quarkus\kubernetes-quickstart>kubectl logs mykub-demo-d87b4fc46-ff7tj
+__  ____  __  _____   ___  __ ____  ______
+ --/ __ \/ / / / _ | / _ \/ //_/ / / / __/
+ -/ /_/ / /_/ / __ |/ , _/ ,< / /_/ /\ \
+--\___\_\____/_/ |_/_/|_/_/|_|\____/___/
+2022-09-16 05:40:20,187 INFO  [io.quarkus] (main) kubernetes-quickstart 1.0.0-SNAPSHOT on JVM (powered by Quarkus 2.12.2.Final) started in 1.656s. Listening on: http://0.0.0.0:8080
+2022-09-16 05:40:20,209 INFO  [io.quarkus] (main) Profile prod activated.
+2022-09-16 05:40:20,210 INFO  [io.quarkus] (main) Installed features: [cdi, kubernetes, resteasy-reactive, smallrye-context-propagation, vertx]
+
+4.5. verify the services
+ E:\session\IBM\2022\sep\quarkus\kubernetes-quickstart>kubectl get svc
+NAME         TYPE           CLUSTER-IP       EXTERNAL-IP   PORT(S)        AGE
+kubernetes   ClusterIP      10.96.0.1        <none>        443/TCP        12h
+mykub-demo   LoadBalancer   10.101.230.205   <pending>     80:32760/TCP   4h19m
+
+4.6.lanuch the app using minikube
+E:\session\IBM\2022\sep\quarkus\kubernetes-quickstart>minikube service mykub-demo
+|-----------|------------|-------------|---------------------------|
+| NAMESPACE |    NAME    | TARGET PORT |            URL            |
+|-----------|------------|-------------|---------------------------|
+| default   | mykub-demo | http/80     | http://192.168.49.2:32760 |
+|-----------|------------|-------------|---------------------------|
+* Starting tunnel for service mykub-demo.
+|-----------|------------|-------------|------------------------|
+| NAMESPACE |    NAME    | TARGET PORT |          URL           |
+|-----------|------------|-------------|------------------------|
+| default   | mykub-demo |             | http://127.0.0.1:55085 |
+|-----------|------------|-------------|------------------------|
+* Opening service default/mykub-demo in default browser...
+! Because you are using a Docker driver on windows, the terminal needs to be open to run it.
+
+http://127.0.0.1:55085/hello
+.....................................................................................
+			 How to build Native applications
+.....................................................................................
+
+How we are running java apps?
+
+ we need jvm - which host for java apps.
+ without jvm can we run java apps?
+  Yes - you can run java apps without jvm - Native apps.
+
+Now a days apps are running inside containers, which are linux.
+
+Container and java 
+    
+   Your App
+      |
+    jvm
+     |
+   container
+
+container and java native
+
+  Your App(native)
+      |
+      |
+   container
+....................................................................................
+			 can we migrate any java apps into native apps							using graalvm directly
+No, we need lot of api changes
+ 
+...................................................................................
+Quarkus(red hat) and GraalVM (Oracle) who jointly build a wrapper for Quarkus echo system to convert any quarkus apps into native apps
+  
+   Mandrel: A specialized distribution of GraalVM for Quarkus
+
+.....................................................................................
+
+How to prepare Quarkus native apps?
+
+1.via os dependency
+  you can build native apps for os directly
+
+if you want to build native app for windows , you can 
+if you want to build native app for linux , you can 
+
+Setup:
+ 1.install graalvm 
+ 2.you can build project
+
+
+2.via docker
+
+ through docker we can build native image, which can be deployed on container.
+.................................................................................
+How to run quarkus app?
+
+1.dev mode
+ mvn compile quarkus:dev
+
+2.prod mode
+
+JVM mode:
+
+2.1.create normal jar and run
+mvn package
+mvnw package
+ It produces the `quarkus-run.jar` file in the `target/quarkus-app/` directory.
+Be aware that it’s not an _über-jar_ as the dependencies are copied into the `target/quarkus-app/lib/` directory.
+
+The application is now runnable using `java -jar target/quarkus-app/quarkus-run.jar`.
+
+2.2.Uber jar deployment
+If you want to build an _über-jar_, execute the following command:
+```shell script
+./mvnw package -Dquarkus.package.type=uber-jar
+```
+
+The application, packaged as an _über-jar_, is now runnable using `java -jar target/*-runner.jar`.
+
+java -jar target/native-quarkusapp-1.0.0-SNAPSHOT-runner.jar
+  
+Native Mode:
+
+With graal vm installed on any os:
+./mvnw package -Pnative
+
+Or, if you don't have GraalVM installed, you can run the native executable build in a container using: 
+```shell script
+./mvnw package -Pnative -Dquarkus.native.container-build=true
+```
+
+in order to test , you need linux or you can prepare via docker.
+
+./target/native-quarkusapp-1.0.0-SNAPSHOT-runner
+....................................................................................
+				Docker Deployment
+.....................................................................................
+
+if you want to deploy application on docker container we have many mode
+
+1.jvm mode
+  package your code  run on jvm inside docker.
+
+dockerfile.jvm
+####
+# This Dockerfile is used in order to build a container that runs the Quarkus application in JVM mode
+#
+# Before building the container image run:
+#
+# ./mvnw package
+#
+# Then, build the image with:
+#
+# docker build -f src/main/docker/Dockerfile.jvm -t quarkus/native-quarkusapp-jvm .
+....................................................................................
+
+Use case : 
+
+ - Native image(linux binary)
+    if no graal setup
+      build native image via docker engine
+       mvnw package -Pnative -Dquarkus.native.container-build=true - if you dont have graal setup follow this
+     
+     if you want to on linux
+        run    "./target/native-quarkusapp-1.0.0-SNAPSHOT-runner . "
+
+     if you want to run on windows
+        pack native image inside docker , run container
+  docker build -f src/main/docker/Dockerfile.native -t quarkus/native-quarkusapp .
+.....................................&&............................................. 
+   
+	
+ 
+       
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  

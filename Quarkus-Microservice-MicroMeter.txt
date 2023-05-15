@@ -1,0 +1,79 @@
+			   Microservices- Quarkus -MicroMeter Metrics
+....................................................................................
+
+Micro meter is a lib/tool to track application's meteric informations such as memory,howmuch time it took to execute
+
+Micrometer provides a simple facade over the instrumentation clients for the most popular monitoring systems, allowing you to instrument your JVM-based application code without vendor lock-in. Think SLF4J, but for metrics.
+
+Metrics type:
+1.Counter
+2.Gauges
+3.Timers
+4.Distribution summary
+
+These core types provide an abstraction layer that can be adapted to different backend monitoring systems.
+
+Micro meter collects information and send to Metric anyalis tools(Monitoring tools)
+
+create new app
+
+add micrometer dependency
+
+>quarkus create app code-with-quarkus-micrometer
+
+>quarkus extension add micrometer-registry-prometheus
+
+Basic Eg:
+package org.acme;
+
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tags;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+
+import java.util.LinkedList;
+import java.util.NoSuchElementException;
+
+@Path("meter")
+public class MicroMeterRegistryResource {
+
+    private final MeterRegistry meterRegistry;
+
+    LinkedList<Long> list = new LinkedList<>();
+
+    MicroMeterRegistryResource(MeterRegistry meterRegistry) {
+        this.meterRegistry = meterRegistry;
+        //collect metrics and store into linked list
+        meterRegistry.gaugeCollectionSize("example.list.size", Tags.empty(), list);
+    }
+    //api to record metrics
+
+    @GET
+    @Path("gauge/{number}")
+    public Long checkListSize(long number) {
+        if (number == 2 || number % 2 == 0) {
+            // add even numbers to the list
+            list.add(number);
+        } else {
+            // remove items from the list for odd numbers
+            try {
+                number = list.removeFirst();
+            } catch (NoSuchElementException nse) {
+                number = 0;
+            }
+        }
+        return number;
+    }
+
+
+}
+
+How to change the metrics format? like json and how to change management port?
+
+quarkus.management.enabled=true
+quarkus.micrometer.export.json.enabled=true
+quarkus.micrometer.export.json.path=metrics/json
+quarkus.micrometer.export.prometheus.path=metrics/prometheus
+
+
+
